@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Rítmico - Versión Partitura</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a2a6c 0%, #2a3a7c 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .partitura-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .pentagrama {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            transform: translateY(-50%);
+            height: 80px;
+            background: 
+                linear-gradient(to bottom, 
+                    transparent 0%, transparent 19%, 
+                    rgba(255,255,255,0.3) 19%, rgba(255,255,255,0.3) 21%,
+                    transparent 21%, transparent 39%,
+                    rgba(255,255,255,0.3) 39%, rgba(255,255,255,0.3) 41%,
+                    transparent 41%, transparent 59%,
+                    rgba(255,255,255,0.3) 59%, rgba(255,255,255,0.3) 61%,
+                    transparent 61%, transparent 79%,
+                    rgba(255,255,255,0.3) 79%, rgba(255,255,255,0.3) 81%,
+                    transparent 81%, transparent 100%);
+        }
+
+        .hit-line {
+            position: absolute;
+            left: 150px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #ff4444;
+            box-shadow: 0 0 10px #ff4444;
+            z-index: 10;
+        }
+
+        .note {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: all 0.1s ease;
+            z-index: 5;
+        }
+
+        .note.redonda {
+            background: #4CAF50;
+            border: 3px solid white;
+        }
+
+        .note.hit {
+            opacity: 0.7;
+            transform: translateY(-50%) scale(1.2);
+        }
+
+        .note.miss {
+            background: #f44336;
+        }
+
+        .game-info {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background: #4CAF50;
+            color: white;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .input-key {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .key {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+
+        .key.active {
+            background: #4CAF50;
+            color: white;
+            transform: scale(0.95);
+            box-shadow: 0 0 20px #4CAF50;
+        }
+
+        .key-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            height: 120px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .log-perfect { color: #4CAF50; }
+        .log-great { color: #8BC34A; }
+        .log-good { color: #FFC107; }
+        .log-miss { color: #F44336; }
+
+        .compas-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .instructions {
+            text-align: center;
+            margin-bottom: 15px;
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+
+        .timing-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Entrenador Rítmico - Modo Partitura 🎵</h1>
+        
+        <div class="instructions">
+            Presiona la BARRA ESPACIADORA cuando las notas lleguen a la línea roja
+        </div>
+        
+        <div class="game-area">
+            <div class="partitura-container" id="partituraContainer">
+                <div class="pentagrama"></div>
+                <div class="hit-line"></div>
+                <div class="compas-indicator">4/4 - 120 BPM</div>
+                <div class="timing-info" id="timingInfo">Tiempo de viaje: 4s</div>
+                <!-- Las notas se insertarán aquí dinámicamente -->
+            </div>
+            
+            <div class="game-info">
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="score">0</div>
+                        <div class="stat-label">PUNTUACIÓN</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="combo">0</div>
+                        <div class="stat-label">COMBO</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="accuracy">100%</div>
+                        <div class="stat-label">PRECISIÓN</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="time">0s</div>
+                        <div class="stat-label">TIEMPO</div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button id="startBtn" onclick="startGame()">▶ Iniciar</button>
+                    <button id="pauseBtn" onclick="togglePause()" disabled>⏸ Pausar</button>
+                    <button id="stopBtn" onclick="stopGame()" disabled>⏹ Detener</button>
+                    <button onclick="loadTestLevel()">🎼 Cargar Nivel</button>
+                </div>
+                
+                <div class="input-key">
+                    <div class="key" id="spaceKey" onclick="handleInput()">
+                        SPACE
+                    </div>
+                    <div class="key-label">BARRA ESPACIADORA</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="log" id="gameLog">
+            <div class="log-entry">Sistema listo. Carga el nivel y presiona Iniciar.</div>
+        </div>
+    </div>
+
+    <script>
+        class RhythmEngine {
+            constructor() {
+                this.currentLevel = null;
+                this.isPlaying = false;
+                this.isPaused = false;
+                this.startTime = 0;
+                this.currentTime = 0;
+                this.animationFrameId = null;
+                
+                this.score = 0;
+                this.combo = 0;
+                this.maxCombo = 0;
+                this.notesHit = 0;
+                this.notesMissed = 0;
+                this.accuracy = 100;
+                
+                this.hitWindows = {
+                    perfect: 50,
+                    great: 100,
+                    good: 150,
+                    miss: 200
+                };
+                
+                // Configuración de desplazamiento visual
+                this.visualSettings = {
+                    travelTime: 4000, // 4 segundos para cruzar la pantalla
+                    hitLinePosition: 150, // Línea más a la derecha
+                    preSpawnTime: 4000 // La primera nota aparece 4 segundos antes
+                };
+                
+                this.callbacks = {
+                    onNoteSpawn: null,
+                    onNoteHit: null,
+                    onNoteMiss: null,
+                    onComboUpdate: null,
+                    onScoreUpdate: null,
+                    onGameEnd: null
+                };
+                
+                this.activeNotes = new Map();
+                this.noteSequence = [];
+                this.noteIndex = 0;
+            }
+
+            setCallbacks(callbacks) {
+                this.callbacks = { ...this.callbacks, ...callbacks };
+            }
+
+            loadLevel(levelData) {
+                this.currentLevel = levelData;
+                this.noteSequence = this.generateNoteSequence(levelData);
+                this.resetGameState();
+                return this;
+            }
+
+            generateNoteSequence(levelData) {
+                const sequence = [];
+                const {
+                    bpm = 120,
+                    duration = 20, // 20 segundos para 5 compases (16s + 4s de pre-spawn)
+                    timeSignature = "4/4",
+                    noteTypes = ["redonda"],
+                    pattern = "redonda-por-compas"
+                } = levelData;
+
+                const beatDuration = 60000 / bpm; // duración de una negra en ms
+                const beatsPerMeasure = parseInt(timeSignature.split('/')[0]);
+                const totalBeats = (duration / 60) * bpm;
+                const measures = totalBeats / beatsPerMeasure;
+
+                // La primera nota empieza 4 segundos antes (pre-spawn)
+                let currentTime = this.visualSettings.preSpawnTime;
+
+                // Una redonda por compás (4 tiempos)
+                for (let i = 0; i < measures; i++) {
+                    // Asegurar que todas las notas tengan el mismo tiempo de viaje
+                    const targetTime = currentTime;
+                    const startTime = targetTime - this.visualSettings.travelTime;
+                    
+                    sequence.push({
+                        id: `note_${sequence.length}`,
+                        type: "redonda",
+                        startTime: startTime, // Aparece 4 segundos antes del target
+                        targetTime: targetTime, // Cuando debe ser golpeada
+                        duration: beatDuration * 4, // Redonda = 4 tiempos
+                        lane: 1,
+                        hit: false,
+                        missed: false,
+                        visualStartTime: startTime // Tiempo cuando empieza a moverse
+                    });
+
+                    currentTime += beatDuration * 4; // Avanzar un compás completo
+                }
+
+                return sequence;
+            }
+
+            start() {
+                if (!this.currentLevel) {
+                    throw new Error("No level loaded");
+                }
+
+                this.isPlaying = true;
+                this.isPaused = false;
+                this.startTime = performance.now();
+                this.noteIndex = 0;
+                
+                this.gameLoop();
+                return this;
+            }
+
+            pause() {
+                this.isPaused = !this.isPaused;
+                if (!this.isPaused) {
+                    this.startTime = performance.now() - this.currentTime;
+                    this.gameLoop();
+                }
+                return this;
+            }
+
+            stop() {
+                this.isPlaying = false;
+                this.isPaused = false;
+                if (this.animationFrameId) {
+                    cancelAnimationFrame(this.animationFrameId);
+                }
+                this.resetGameState();
+                return this;
+            }
+
+            gameLoop() {
+                if (!this.isPlaying || this.isPaused) return;
+
+                this.currentTime = performance.now() - this.startTime;
+                this.spawnNotes();
+                this.updateActiveNotes();
+                
+                if (this.checkGameEnd()) {
+                    this.endGame();
+                    return;
+                }
+
+                this.animationFrameId = requestAnimationFrame(() => this.gameLoop());
+            }
+
+            spawnNotes() {
+                while (this.noteIndex < this.noteSequence.length) {
+                    const note = this.noteSequence[this.noteIndex];
+                    
+                    if (note.startTime <= this.currentTime) {
+                        this.activeNotes.set(note.id, { ...note, spawned: true });
+                        
+                        if (this.callbacks.onNoteSpawn) {
+                            this.callbacks.onNoteSpawn(note);
+                        }
+                        
+                        this.noteIndex++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            updateActiveNotes() {
+                const currentTime = this.currentTime;
+                
+                for (const [noteId, note] of this.activeNotes.entries()) {
+                    // Remover notas que hayan pasado la línea de hit (con un pequeño margen)
+                    if (!note.hit && !note.missed && 
+                        currentTime > note.targetTime + 100) { // 100ms después del target
+                        
+                        note.missed = true;
+                        this.handleNoteMiss(noteId);
+                    }
+                }
+            }
+
+            handleInput(inputTime = performance.now()) {
+                if (!this.isPlaying || this.isPaused) return;
+
+                const gameTime = inputTime - this.startTime;
+                let bestNote = null;
+                let bestDeviation = Infinity;
+
+                // Buscar la nota más cercana (solo hay un lane ahora)
+                for (const [noteId, note] of this.activeNotes.entries()) {
+                    if (!note.hit && !note.missed) {
+                        const deviation = Math.abs(gameTime - note.targetTime);
+                        
+                        if (deviation <= this.hitWindows.miss && deviation < bestDeviation) {
+                            bestNote = { noteId, note, deviation };
+                            bestDeviation = deviation;
+                        }
+                    }
+                }
+
+                if (bestNote) {
+                    this.handleNoteHit(bestNote.noteId, bestNote.note, bestNote.deviation);
+                }
+            }
+
+            handleNoteHit(noteId, note, deviation) {
+                note.hit = true;
+                note.hitDeviation = deviation;
+                
+                const score = this.calculateScore(deviation);
+                this.score += score;
+                this.combo++;
+                this.maxCombo = Math.max(this.maxCombo, this.combo);
+                this.notesHit++;
+                this.updateAccuracy();
+                
+                if (this.callbacks.onNoteHit) {
+                    this.callbacks.onNoteHit({
+                        note,
+                        score,
+                        deviation,
+                        rating: this.getHitRating(deviation),
+                        combo: this.combo
+                    });
+                }
+                
+                if (this.callbacks.onScoreUpdate) {
+                    this.callbacks.onScoreUpdate(this.score);
+                }
+                
+                if (this.callbacks.onComboUpdate) {
+                    this.callbacks.onComboUpdate(this.combo);
+                }
+                
+                // Remover inmediatamente después del hit
+                this.activeNotes.delete(noteId);
+            }
+
+            handleNoteMiss(noteId) {
+                const note = this.activeNotes.get(noteId);
+                this.combo = 0;
+                this.notesMissed++;
+                this.updateAccuracy();
+                
+                if (this.callbacks.onNoteMiss) {
+                    this.callbacks.onNoteMiss(note);
+                }
+                
+                if (this.callbacks.onComboUpdate) {
+                    this.callbacks.onComboUpdate(this.combo);
+                }
+                
+                // Remover inmediatamente después del miss
+                this.activeNotes.delete(noteId);
+            }
+
+            calculateScore(deviation) {
+                const rating = this.getHitRating(deviation);
+                const baseScores = {
+                    perfect: 100,
+                    great: 75,
+                    good: 50
+                };
+                
+                const baseScore = baseScores[rating] || 0;
+                const comboMultiplier = 1 + (this.combo * 0.1);
+                return Math.floor(baseScore * comboMultiplier);
+            }
+
+            getHitRating(deviation) {
+                if (deviation <= this.hitWindows.perfect) return "perfect";
+                if (deviation <= this.hitWindows.great) return "great";
+                if (deviation <= this.hitWindows.good) return "good";
+                return "miss";
+            }
+
+            updateAccuracy() {
+                const totalNotes = this.notesHit + this.notesMissed;
+                this.accuracy = totalNotes > 0 ? (this.notesHit / totalNotes) * 100 : 100;
+            }
+
+            checkGameEnd() {
+                if (this.noteIndex >= this.noteSequence.length) {
+                    const allNotesProcessed = Array.from(this.activeNotes.values())
+                        .every(note => note.hit || note.missed);
+                    return allNotesProcessed;
+                }
+                return false;
+            }
+
+            endGame() {
+                this.isPlaying = false;
+                
+                if (this.animationFrameId) {
+                    cancelAnimationFrame(this.animationFrameId);
+                }
+                
+                if (this.callbacks.onGameEnd) {
+                    this.callbacks.onGameEnd({
+                        score: this.score,
+                        accuracy: this.accuracy,
+                        maxCombo: this.maxCombo,
+                        notesHit: this.notesHit,
+                        notesMissed: this.notesMissed,
+                        rating: this.calculateFinalRating()
+                    });
+                }
+            }
+
+            calculateFinalRating() {
+                if (this.accuracy >= 95) return "S";
+                if (this.accuracy >= 85) return "A";
+                if (this.accuracy >= 75) return "B";
+                if (this.accuracy >= 60) return "C";
+                return "D";
+            }
+
+            resetGameState() {
+                this.score = 0;
+                this.combo = 0;
+                this.maxCombo = 0;
+                this.notesHit = 0;
+                this.notesMissed = 0;
+                this.accuracy = 100;
+                this.activeNotes.clear();
+                this.noteIndex = 0;
+            }
+
+            getGameState() {
+                return {
+                    isPlaying: this.isPlaying,
+                    isPaused: this.isPaused,
+                    currentTime: this.currentTime,
+                    score: this.score,
+                    combo: this.combo,
+                    accuracy: this.accuracy,
+                    activeNotes: this.activeNotes.size,
+                    totalNotes: this.noteSequence.length,
+                    notesProcessed: this.noteIndex
+                };
+            }
+        }
+
+        // Variables globales
+        let rhythmEngine;
+        let gameInterval;
+
+        // Inicialización
+        function init() {
+            rhythmEngine = new RhythmEngine();
+            
+            // Configurar callbacks
+            rhythmEngine.setCallbacks({
+                onNoteSpawn: (note) => {
+                    spawnNoteVisual(note);
+                    addLog(`Nueva redonda apareció`, 'info');
+                },
+                
+                onNoteHit: (result) => {
+                    updateNoteVisual(result.note.id, 'hit');
+                    addLog(`¡${result.rating.toUpperCase()}! +${result.score} puntos`, result.rating);
+                },
+                
+                onNoteMiss: (note) => {
+                    updateNoteVisual(note.id, 'miss');
+                    addLog('Redonda fallada', 'miss');
+                },
+                
+                onScoreUpdate: (score) => {
+                    document.getElementById('score').textContent = score;
+                },
+                
+                onComboUpdate: (combo) => {
+                    document.getElementById('combo').textContent = combo;
+                },
+                
+                onGameEnd: (results) => {
+                    addLog(`🎉 Juego terminado! Puntuación: ${results.score} - Precisión: ${results.accuracy.toFixed(1)}% - Rating: ${results.rating}`, 'info');
+                    updateControls(false);
+                    clearInterval(gameInterval);
+                }
+            });
+            
+            addLog('Motor rítmico inicializado - Modo Partitura', 'info');
+        }
+
+        // Funciones del juego
+        function loadTestLevel() {
+            const testLevel = {
+                id: 1,
+                name: "Nivel Redondas 4/4",
+                bpm: 120,
+                duration: 20, // 5 compases (16s) + 4s de pre-spawn
+                timeSignature: "4/4",
+                noteTypes: ["redonda"],
+                pattern: "redonda-por-compas"
+            };
+            
+            rhythmEngine.loadLevel(testLevel);
+            clearVisualNotes();
+            addLog(`Nivel cargado: ${testLevel.name} (120 BPM, 4/4, Redondas)`, 'info');
+            updateControls(true);
+        }
+
+        function startGame() {
+            try {
+                rhythmEngine.start();
+                addLog('Juego iniciado - Sigue el ritmo de las redondas', 'info');
+                updateControls(false);
+                
+                // Actualizar tiempo y notas en tiempo real
+                gameInterval = setInterval(() => {
+                    if (rhythmEngine.isPlaying && !rhythmEngine.isPaused) {
+                        const state = rhythmEngine.getGameState();
+                        document.getElementById('time').textContent = `${Math.floor(state.currentTime / 1000)}s`;
+                        document.getElementById('accuracy').textContent = `${state.accuracy.toFixed(1)}%`;
+                        updateVisualNotes();
+                    }
+                }, 16); // ~60fps
+                
+            } catch (error) {
+                addLog(`Error: ${error.message}`, 'miss');
+            }
+        }
+
+        function togglePause() {
+            rhythmEngine.pause();
+            const isPaused = rhythmEngine.isPaused;
+            document.getElementById('pauseBtn').textContent = isPaused ? '▶ Reanudar' : '⏸ Pausar';
+            addLog(isPaused ? 'Juego pausado' : 'Juego reanudado', 'info');
+        }
+
+        function stopGame() {
+            rhythmEngine.stop();
+            addLog('Juego detenido', 'info');
+            updateControls(true);
+            clearInterval(gameInterval);
+            clearVisualNotes();
+            resetUI();
+        }
+
+        function handleInput() {
+            if (!rhythmEngine.isPlaying || rhythmEngine.isPaused) return;
+            
+            rhythmEngine.handleInput();
+            
+            // Efecto visual de tecla
+            const key = document.getElementById('spaceKey');
+            key.classList.add('active');
+            setTimeout(() => key.classList.remove('active'), 100);
+        }
+
+        // Funciones de UI para scroll horizontal
+        function spawnNoteVisual(note) {
+            const container = document.getElementById('partituraContainer');
+            const noteElement = document.createElement('div');
+            noteElement.className = `note ${note.type}`;
+            noteElement.id = `note_${note.id}`;
+            noteElement.textContent = '𝅝'; // Símbolo de redonda
+            
+            // Posicionar a la derecha (fuera de la pantalla)
+            const containerWidth = container.clientWidth;
+            noteElement.style.left = `${containerWidth}px`;
+            
+            container.appendChild(noteElement);
+        }
+
+        function updateVisualNotes() {
+            if (!rhythmEngine.isPlaying) return;
+            
+            const currentTime = rhythmEngine.currentTime;
+            const container = document.getElementById('partituraContainer');
+            const containerWidth = container.clientWidth;
+            const hitLinePosition = rhythmEngine.visualSettings.hitLinePosition;
+            const travelTime = rhythmEngine.visualSettings.travelTime;
+            
+            const notes = document.querySelectorAll('.note');
+            
+            notes.forEach(note => {
+                const noteId = note.id.replace('note_', '');
+                const noteData = rhythmEngine.activeNotes.get(noteId) || 
+                               rhythmEngine.noteSequence.find(n => n.id === noteId);
+                
+                if (noteData) {
+                    // Calcular progreso basado en el tiempo de viaje visual
+                    const visualStartTime = noteData.visualStartTime;
+                    const elapsed = currentTime - visualStartTime;
+                    const progress = Math.min(elapsed / travelTime, 1);
+                    
+                    // Mover de derecha a izquierda
+                    const startX = containerWidth;
+                    const endX = hitLinePosition;
+                    const currentX = startX - (progress * (startX - endX));
+                    
+                    note.style.left = `${currentX}px`;
+                    
+                    // Remover notas que pasaron la hit line (con un margen pequeño)
+                    if (currentX < hitLinePosition - 10 && !note.classList.contains('hit') && !note.classList.contains('miss')) {
+                        note.remove();
+                    }
+                }
+            });
+        }
+
+        function updateNoteVisual(noteId, status) {
+            const noteElement = document.getElementById(`note_${noteId}`);
+            if (noteElement) {
+                noteElement.classList.add(status);
+                // Remover inmediatamente después de mostrar el feedback
+                setTimeout(() => {
+                    if (noteElement.parentNode) {
+                        noteElement.parentNode.removeChild(noteElement);
+                    }
+                }, 200); // Muy breve para el feedback visual
+            }
+        }
+
+        function clearVisualNotes() {
+            const notes = document.querySelectorAll('.note');
+            notes.forEach(note => note.remove());
+        }
+
+        function resetUI() {
+            document.getElementById('score').textContent = '0';
+            document.getElementById('combo').textContent = '0';
+            document.getElementById('accuracy').textContent = '100%';
+            document.getElementById('time').textContent = '0s';
+            document.getElementById('pauseBtn').textContent = '⏸ Pausar';
+        }
+
+        function updateControls(canStart) {
+            document.getElementById('startBtn').disabled = !canStart;
+            document.getElementById('pauseBtn').disabled = canStart;
+            document.getElementById('stopBtn').disabled = canStart;
+        }
+
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('gameLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Event listeners para teclado
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                event.preventDefault(); // Prevenir scroll de página
+                handleInput();
+            }
+        });
+
+        // Inicializar al cargar la página
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
